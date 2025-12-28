@@ -140,8 +140,8 @@ Triggers: Version tags (`v*`), manual
 Uses GoReleaser: Test → Build multi-platform (`-s -w` ldflags) → Docker (ghcr.io/giautm/ast2llm-go) → Release
 
 ### Important CI Notes
-- Go 1.22 in CI (go.mod has 1.24.1, both work)
-- Linting not enforced, run locally
+- **Go Version**: CI uses Go 1.22 (stable). go.mod specifies 1.24.1 (dev/unstable), but the code is compatible with 1.22+
+- Linting not enforced in CI, run locally for quality
 - Coverage excludes `/cmd/`
 - UPX-compressed artifacts
 - Auto releases: `v{YYYYMMDD}-{last4SHA}`, manual: git tags
