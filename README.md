@@ -113,6 +113,61 @@ Add to your VS Code MCP config:
 }
 ```
 
+## Usage Example
+
+Once configured in your MCP client, you can use the `parse_go` tool to analyze Go projects. Here's an example analyzing this project's own source code:
+
+### Using the parse_go Tool
+
+The tool accepts two parameters:
+- `projectPath`: Path to the Go project directory
+- `filePath`: Relative path to a specific file within the project
+
+**Example: Analyzing the main server file**
+
+```json
+{
+  "tool": "parse_go",
+  "arguments": {
+    "projectPath": "/path/to/ast2llm-go",
+    "filePath": "cmd/server/main.go"
+  }
+}
+```
+
+**Example Response:**
+
+```
+--- File: /path/to/ast2llm-go/cmd/server/main.go ---
+Package: main
+
+Imports:
+- context
+- log
+- os
+- os/signal
+- syscall
+- github.com/modelcontextprotocol/go-sdk/mcp
+- github.com/vlad/ast2llm-go/internal/parser
+- github.com/vlad/ast2llm-go/internal/prompts
+- github.com/vlad/ast2llm-go/internal/tools
+
+Functions:
+  Function: main
+    Parameters: 
+    Return Types: 
+    Comment: ""
+```
+
+The tool will parse the entire project to resolve dependencies and provide comprehensive information about the specified file, including:
+- Package name
+- All imports
+- Functions with their signatures
+- Struct definitions with fields and methods
+- Interface definitions
+- Global variables
+- Cross-file type references and their definitions
+
 ## Note About Current State
 This MCP server is under active development and may have stability issues or incomplete functionality. We're working hard to improve it, but you might encounter:
 
