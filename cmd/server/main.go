@@ -1,9 +1,10 @@
 package main
 
 import (
+	"context"
 	"log"
 
-	"github.com/mark3labs/mcp-go/server"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/vlad/ast2llm-go/internal/parser"
 	"github.com/vlad/ast2llm-go/internal/prompts"
 	"github.com/vlad/ast2llm-go/internal/tools"
@@ -11,11 +12,10 @@ import (
 
 func main() {
 	// Initialize components
-	s := server.NewMCPServer(
-		"AST2LLM",
-		"1.0.0",
-		server.WithToolCapabilities(false),
-	)
+	s := mcp.NewServer(&mcp.Implementation{
+		Name:    "AST2LLM",
+		Version: "1.0.0",
+	}, nil)
 	p := parser.New()
 
 	// Register tools
@@ -29,7 +29,7 @@ func main() {
 	}
 
 	// Start the stdio server
-	if err := server.ServeStdio(s); err != nil {
+	if err := s.Run(context.Background(), &mcp.StdioTransport{}); err != nil {
 		log.Fatalf("Server error: %v\n", err)
 	}
 }
