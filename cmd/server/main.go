@@ -32,18 +32,8 @@ func main() {
 	}
 
 	// Create a context that will be cancelled on interrupt signal
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// Listen for interrupt signals
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-
-	go func() {
-		<-sigChan
-		log.Println("Received interrupt signal, shutting down gracefully...")
-		cancel()
-	}()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
 	// Start the stdio server
 	if err := s.Run(ctx, &mcp.StdioTransport{}); err != nil {
