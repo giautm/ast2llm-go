@@ -1,3 +1,4 @@
+version: 2
 project_name: ast2llm-go
 before:
   hooks:
@@ -22,9 +23,8 @@ builds:
     mod_timestamp: '{{ .CommitTimestamp }}'
 archives:
   - id: binaries
-    builds:
-      - ast2llm
-    format: binary
+    ids: [ast2llm]
+    formats: [binary]
     name_template: '{{ .Binary }}-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
 checksum:
   name_template: '{{ .ArtifactName }}.sha256'

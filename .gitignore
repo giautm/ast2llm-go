@@ -36,3 +36,5 @@ go.work.sum
 
 # MCP server for local testing via MCP Inspector
 mcp-server
+
+dist
