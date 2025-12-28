@@ -1,0 +1,58 @@
+version: 2
+project_name: ast2llm-go
+before:
+  hooks:
+    - go test ./...
+builds:
+  - id: ast2llm
+    main: ./cmd/server
+    binary: ast2llm-go
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    goamd64:
+      - v1
+    ldflags:
+      - -s -w
+    mod_timestamp: '{{ .CommitTimestamp }}'
+archives:
+  - id: binaries
+    ids: [ast2llm]
+    formats: [binary]
+    name_template: '{{ .Binary }}-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+checksum:
+  name_template: '{{ .ArtifactName }}.sha256'
+  algorithm: sha256
+  split: true
+dockers_v2:
+  - id: ast2llm
+    dockerfile: Dockerfile
+    ids:
+      - ast2llm
+    images:
+      - ghcr.io/{{ .RepoOwner }}/ast2llm-go
+    tags:
+      - '{{ .Version }}'
+      - latest
+    labels:
+      org.opencontainers.image.title: ast2llm-go
+      org.opencontainers.image.description: Local AST-powered context enhancement tool for LLMs
+      org.opencontainers.image.source: 'https://github.com/{{ .RepoOwner }}/{{ .ProjectName }}'
+      org.opencontainers.image.version: '{{ .Version }}'
+      org.opencontainers.image.revision: '{{ .FullCommit }}'
+      org.opencontainers.image.created: '{{ .Date }}'
+changelog:
+  use: git
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+release:
+  draft: false
+  prerelease: auto
