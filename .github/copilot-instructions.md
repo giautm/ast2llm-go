@@ -2,23 +2,19 @@
 
 ## Repository Overview
 
-**ast2llm-go** is an MCP (Model Context Protocol) server that provides AST-powered context enhancement for LLMs working with Go codebases. It analyzes Go project structure using precise AST analysis and injects relevant code context into prompts, delivering 3-5x faster context resolution than grep-based approaches.
+**ast2llm-go** is an MCP (Model Context Protocol) server for AST-powered Go code context enhancement. It delivers 3-5x faster context resolution than grep-based approaches.
 
-- **Size**: ~19MB repository, 20 Go source files
-- **Language**: Go 1.24.1+ (go.mod specifies 1.24.1, CI uses 1.22, README mentions 1.22+)
-- **Type**: CLI tool/MCP server application
-- **Main Binary**: `ast2llm-go` (MCP server for stdio communication)
-- **Key Dependencies**: 
-  - `github.com/modelcontextprotocol/go-sdk` - MCP protocol implementation
-  - `golang.org/x/tools/go/packages` - Go package parsing
-  - `github.com/stretchr/testify` - Testing framework
+- **Size**: ~19MB, 20 Go source files
+- **Language**: Go 1.22+ required
+- **Type**: CLI tool/MCP server (stdio communication)
+- **Key Dependencies**: `modelcontextprotocol/go-sdk`, `golang.org/x/tools/go/packages`, `stretchr/testify`
 
 ## Build & Development Workflow
 
 ### Prerequisites
-- **Go 1.22 or higher** required for building and testing
-- **golangci-lint** required for linting (install with: `go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest`)
-- Ensure `$(go env GOPATH)/bin` is in your PATH to use installed Go tools
+- Go 1.22+ required
+- golangci-lint: `go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest`
+- Ensure `$(go env GOPATH)/bin` is in PATH
 
 ### Essential Commands (Always Run in This Order)
 
@@ -62,7 +58,7 @@ make check
 ```
 
 ### Complete Build & Test Cycle
-The full cycle (download deps, test, build) takes approximately **2 seconds** total:
+Full cycle takes ~2 seconds:
 ```bash
 go mod download && go test ./... && go build -o mcp-server ./cmd/server
 ```
@@ -99,15 +95,15 @@ ast2llm-go/
 ### Key Source Files
 
 **Entry Points:**
-- `cmd/server/main.go` - Main MCP server initialization, registers tools and prompts
-- `cmd/parser-cli/main.go` - CLI tool for testing parser functionality
+- `cmd/server/main.go` - MCP server, registers tools and prompts
+- `cmd/parser-cli/main.go` - CLI for testing parser
 
-**Core Logic:**
-- `internal/parser/project_parser.go` - Parses Go projects using `go/packages` and `go/types`, extracts structs, interfaces, functions, and dependencies
-- `internal/composer/project_composer.go` - Composes parsed AST data into LLM-friendly text format
-- `internal/types/types.go` - Core type definitions: FileInfo, StructInfo, InterfaceInfo, FunctionInfo, GlobalVarInfo
-- `internal/tools/tools.go` - Implements the `parse_go` MCP tool
-- `internal/prompts/prompts.go` - Implements the `enhance` MCP prompt
+**Core:**
+- `internal/parser/project_parser.go` - Parses Go projects, extracts types/functions
+- `internal/composer/project_composer.go` - Formats AST for LLM consumption
+- `internal/types/types.go` - FileInfo, StructInfo, InterfaceInfo, FunctionInfo
+- `internal/tools/tools.go` - `parse_go` MCP tool
+- `internal/prompts/prompts.go` - `enhance` MCP prompt
 
 ## Testing
 
@@ -119,92 +115,65 @@ ast2llm-go/
 
 ### Running Tests
 ```bash
-# Run all tests with verbose output
-go test -v ./...
+go test -v ./...                    # All tests (verbose)
+go test -v ./internal/parser        # Specific package
 
-# Run tests for specific package
-go test -v ./internal/parser
-
-# Run with coverage (CI approach, excludes cmd/)
+# Coverage (CI approach, excludes cmd/)
 PKGS=$(go list ./... | grep -v '/cmd/')
 go test -coverpkg=./... -covermode=atomic -coverprofile=coverage.out $PKGS
 ```
 
-**Expected Test Output**: All tests should pass in ~2 seconds. No test data directories exist; tests use in-memory test fixtures.
+**Expected**: All tests pass in ~2 seconds. No external test data; uses in-memory fixtures.
 
 ## Continuous Integration (CI/CD)
 
 ### CI Pipeline (.github/workflows/ci.yml)
-Runs on: Pull requests to `main`, pushes to `main`, manual dispatch
+Triggers: PRs to main, pushes to main, manual
 
-**Steps:**
-1. Checkout with full history (`fetch-depth: 0`)
-2. Setup Go 1.22 with caching
-3. `go mod download`
-4. `go test -v ./...`
-5. Generate coverage report (excludes `/cmd/`)
-6. Upload coverage to Coveralls
-7. **Linting is DISABLED** (commented out in workflow, lines 46-50)
-8. Build binaries for multiple platforms (linux/darwin/windows, amd64/arm64)
-9. Compress binaries with UPX
-10. Generate SHA256 checksums
-11. Upload build artifacts
-12. Create GitHub release (on push to main only) with date-based versioning: `v{YYYYMMDD}-{last4SHA}`
+**Steps**: Checkout → Setup Go 1.22 → Download deps → Test → Coverage → Build multi-platform → UPX compress → Generate checksums → Upload artifacts → Create release (main pushes only, format: `v{YYYYMMDD}-{last4SHA}`)
+
+**Note**: Linting disabled in CI (lines 46-50 commented out)
 
 ### Release Pipeline (.github/workflows/release.yml)
-Runs on: Push of version tags (`v*`), manual dispatch
+Triggers: Version tags (`v*`), manual
 
-**Uses GoReleaser** to:
-- Run tests before building (`go test ./...`)
-- Build multi-platform binaries with optimizations (`-s -w` ldflags)
-- Create Docker images and push to `ghcr.io/giautm/ast2llm-go`
-- Generate changelog and GitHub release
+Uses GoReleaser: Test → Build multi-platform (`-s -w` ldflags) → Docker (ghcr.io/giautm/ast2llm-go) → Release
 
 ### Important CI Notes
-- **Go Version**: CI uses Go 1.22, but go.mod specifies 1.24.1 (both work)
-- **Linting**: Not enforced in CI (commented out), but can be run locally
-- **Coverage**: Only packages outside `/cmd/` are included in coverage
-- **Build Artifacts**: Compressed with UPX for smaller binary size
-- **Release Versioning**: Automatic releases use `v{YYYYMMDD}-{last4SHA}` format, manual releases use git tags
+- Go 1.22 in CI (go.mod has 1.24.1, both work)
+- Linting not enforced, run locally
+- Coverage excludes `/cmd/`
+- UPX-compressed artifacts
+- Auto releases: `v{YYYYMMDD}-{last4SHA}`, manual: git tags
 
 ## Configuration Files
 
-### Build Configuration
-- **go.mod**: Module path is `github.com/vlad/ast2llm-go` (note: GitHub repo is `giautm/ast2llm-go`, this is intentional)
-- **Makefile**: Defines targets for `build`, `test`, `lint`, `check`, `help`
-- **.goreleaser.yaml**: Multi-platform build config (Linux/macOS/Windows, amd64/arm64)
-
-### Linting Configuration
-- **No custom config**: Uses golangci-lint defaults (no `.golangci.yml` file exists)
-- **Current status**: All code passes golangci-lint with default settings
+- **go.mod**: Module `github.com/vlad/ast2llm-go` (GitHub repo is `giautm/ast2llm-go` - intentional)
+- **Makefile**: `build`, `test`, `lint`, `check`, `help`
+- **.goreleaser.yaml**: Multi-platform (Linux/macOS/Windows, amd64/arm64)
+- **Linting**: Uses golangci-lint defaults (no custom config)
 
 ### Ignored Files (.gitignore)
-- Build artifacts: `*.exe`, `*.dll`, `*.so`, `*.dylib`, `dist/`, `build/`
-- Test outputs: `*.test`, `*.out`, `coverage.*`, `*.coverprofile`
-- Binaries: `mcp-server`, `server`
-- IDE files: `.idea/`, `.vscode/`, `.DS_Store`
-- Environment: `.env`, `go.work`, `go.work.sum`
+- Build: `*.exe`, `*.dll`, `*.so`, `dist/`, `build/`, `mcp-server`, `server`
+- Tests: `*.test`, `*.out`, `coverage.*`
+- Other: `.idea/`, `.vscode/`, `.env`, `go.work*`
 
 ## Making Changes
 
 ### Before Committing
-1. **Always test your changes**: `go test ./...`
-2. **Build to ensure no compilation errors**: `go build -o mcp-server ./cmd/server`
-3. **Run linter** (if golangci-lint is available): `$(go env GOPATH)/bin/golangci-lint run ./...`
-4. **Verify changes are minimal**: Check `git diff` and ensure only necessary files are modified
+1. Test: `go test ./...`
+2. Build: `go build -o mcp-server ./cmd/server`
+3. Lint (optional): `$(go env GOPATH)/bin/golangci-lint run ./...`
+4. Verify minimal changes: `git diff`
 
-### Testing Changes to Parser/Composer
-When modifying `internal/parser` or `internal/composer`:
-- Add or update tests in corresponding `*_test.go` files
-- Follow existing table-driven test patterns
-- Use `testify/assert` and `testify/require` for assertions
-- Test with realistic Go code samples (existing tests provide good examples)
+### Parser/Composer Changes
+- Add/update tests in `*_test.go` files
+- Follow table-driven test patterns
+- Use `testify/assert` and `testify/require`
 
-### Testing Changes to MCP Tools/Prompts
-When modifying `internal/tools` or `internal/prompts`:
-- Update corresponding test files
-- Test the full MCP integration (tools registration, argument validation, execution)
-- Ensure error messages are clear and helpful
+### MCP Tools/Prompts Changes
+- Update tests for registration, validation, execution
+- Ensure clear error messages
 
 ## Common Pitfalls & Tips
 
