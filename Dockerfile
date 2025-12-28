@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.6
-FROM gcr.io/distroless/base-nonroot:latest
+FROM gcr.io/distroless/static:nonroot
 
 ARG TARGETPLATFORM
 ARG BINARY=ast2llm-go
