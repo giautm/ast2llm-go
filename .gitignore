@@ -35,4 +35,4 @@ go.work.sum
 .DS_Store
 
 # MCP server for local testing via MCP Inspector
-mcp-server
+mcp-serverserver
